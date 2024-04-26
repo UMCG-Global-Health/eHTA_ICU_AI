@@ -1,0 +1,403 @@
+---
+title: "Results Germany"
+output:
+  word_document:
+    keep_md: yes
+  pdf_document: default
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+
+
+```{r results='hide', message=FALSE, warning=FALSE}
+library(dampack)
+library(QALY)
+library(ggpubr)
+source("./funs/qaly.R")
+source("./funs/simulate.R")
+
+```
+
+
+```{r echo= FALSE}
+params_basecase <- list(
+  mean_los_mech = 11.13,
+  mean_los_non_mech = 5.31, 
+  mean_los_gen_ward = 4.15, 
+  in_hos_mort = 0.3336, 
+  six_month_mort = 0.0621, 
+  time_to_mort = 15.63,
+  prob_disabled = 0.2481, 
+  los_mech_not_disabled = 4.18,
+  or_mech_vent_disabled = 1.04, 
+  disutility_mech = 0.79,
+  utility_recovery_not_disabled = 0.77,
+  utilities_post_recovery65_m = 0.915,
+  costs_mech_vent = 2378.35, 
+  costs_recovery_not_disabled = 1458.14, 
+  intervention_effect_los=4/24,
+  intervention_effect_mort=0.01
+)
+
+```
+
+
+
+```{r results='hide', message=FALSE, warning=FALSE}
+
+
+#parameters and their distributions
+
+params <- c('mean_los_mech',
+            'mean_los_non_mech',
+            'mean_los_gen_ward',
+            'in_hos_mort',
+            'six_month_mort',
+            'time_to_mort',
+            'prob_disabled',
+            'los_mech_not_disabled',
+            'or_mech_vent_disabled',
+            'disutility_mech',
+            'utility_recovery_not_disabled',
+            'utilities_post_recovery65_m',
+            'costs_mech_vent',
+            'costs_recovery_not_disabled',
+            'intervention_effect_los',
+            'intervention_effect_mort')
+
+
+dists_params <-list(c(11.13,14.87 ),
+                    c(5.31,6.72),
+                    c(4.15,7.74),
+                    c(45947, 91803),
+                    c(405, 6113),
+                    c(15.63, 4.44),
+                    c(65, 197),
+                    c(1.33, 3.14),
+                    c(log(1.04), (log(1.08)- log(1.01))/(2*1.96)),
+                    c(19.69,5.23),
+                    c(1.25,0.37),
+                    c(1.95,0.18),
+                    c(2378.35, 1695.69),
+                    c(1444.96, 144.5),
+                    c(4/24,(4/24)/10),
+                    c(0.01, 0.001))
+
+dists <- c('gamma',
+           'gamma',
+           'gamma',
+           'beta',
+           'beta',
+           'gamma',
+           'beta',
+           'gamma',
+           'log-normal',
+           'beta',
+           'beta',
+           'beta',
+           'gamma',
+           'gamma',
+           'gamma',
+           'beta')
+
+parameterization_types <- c('mean, sd',
+                            'mean, sd',
+                            'mean, sd',
+                            'a, b',
+                            'a, b',
+                            'mean, sd',
+                            'a, b',
+                            'shape, scale',
+                            'meanlog, sdlog',
+                            'a, b',
+                            'a, b',
+                            'a, b',
+                            'mean, sd',
+                            'mean, sd',
+                            'mean, sd',
+                            'mean, sd'
+)
+
+set.seed(123)
+
+#generate 1000 samples of parameter values to be used in a probabilistic sensitivity analysis
+psa_samp <- gen_psa_samp(params = params,
+                         dists = dists,
+                         parameterization_types = parameterization_types,
+                         dists_params = dists_params,
+                         nsamp = 1000)
+
+```
+
+
+
+
+
+```{r results='hide', message=FALSE, warning=FALSE}
+#calculation for table
+
+x1 <- simulate_strategies(params_basecase, ceac = TRUE, mean_age = 60, utilities_post_recovery55_m_fixed = 0.927 ,  utilities_post_recovery55_f_fixed = 0.917,  life_exp_m = 22.83,life_exp_f = 26.09)
+x2 <- simulate_strategies(params_basecase, ceac = TRUE, mean_age = 63, utilities_post_recovery55_m_fixed = 0.927 ,  utilities_post_recovery55_f_fixed = 0.917,  life_exp_m = 19.83,life_exp_f = 23.09)
+x3 <- simulate_strategies(params_basecase, ceac = TRUE, mean_age =70, life_exp_m = 12.83,life_exp_f = 16.09)
+
+```
+
+
+
+```{r}
+#create table 1
+
+mean_age1 <- 60
+NMB1 <- (x1$QALY[2]- x1$QALY[1])* 30000 - (x1$Cost[2]- x1$Cost[1])
+
+incremental_costs1 <- (x1$Cost[2]- x1$Cost[1])
+incremental_qalies1 <- (x1$QALY[2]- x1$QALY[1])
+
+ICER1 <- (x1$Cost[2]- x1$Cost[1])/(x1$QALY[2]- x1$QALY[1])
+
+mean_age2 <- 63
+NMB2 <- (x2$QALY[2]- x2$QALY[1])* 30000 - (x2$Cost[2]- x2$Cost[1])
+
+incremental_costs2 <- (x2$Cost[2]- x2$Cost[1])
+incremental_qalies2 <- (x2$QALY[2]- x2$QALY[1])
+
+ICER2 <- (x2$Cost[2]- x2$Cost[1])/(x2$QALY[2]- x2$QALY[1])
+
+mean_age3 <- 70
+NMB3 <- (x3$QALY[2]- x3$QALY[1])* 30000 - (x3$Cost[2]- x3$Cost[1])
+
+incremental_costs3 <- (x3$Cost[2]- x3$Cost[1])
+incremental_qalies3 <- (x3$QALY[2]- x3$QALY[1])
+
+ICER3 <- (x3$Cost[2]- x3$Cost[1])/(x3$QALY[2]- x3$QALY[1])
+
+age <- c(mean_age1, mean_age1, mean_age2, mean_age2, mean_age3, mean_age3)
+care <- c('Care as usual', 'Treatment', 'Care as usual', 'Treatment', 'Care as usual', 'Treatment')
+costs <- c(x1$Cost[1], x1$Cost[2], x2$Cost[1], x2$Cost[2], x3$Cost[1], x3$Cost[2])
+qalys <- c(x1$QALY[1], x1$QALY[2], x2$QALY[1], x2$QALY[2], x3$QALY[1], x3$QALY[2])
+incremental_costs <- c(NA, incremental_costs1, NA, incremental_costs2, NA, incremental_costs3)
+incremental_qalies <- c(NA,incremental_qalies1,NA,incremental_qalies2, NA,incremental_qalies3 )
+icer <- c(NA, ICER1, NA, ICER2, NA, ICER3)
+nmb <- c(NA, NMB1, NA, NMB2, NA, NMB3)
+
+df_results <- data.frame('Age assumed' = age, 'Care provided' = care,
+                         'Costs' = costs, 'QALYs' = qalys ,
+                         'Incremental costs' = incremental_costs, 'Incremental QALYs' = incremental_qalies,
+                         'Incremental cost effectiveness ratio (€ / QALY)' = icer,
+                         'Incremental net monetary benefit (€)' = nmb)
+
+knitr::kable(df_results, "simple")
+```
+
+
+```{r Fig2, message=FALSE, warning = FALSE, fig.width=unit(5,"cm"), fig.height=unit(4,"cm"),dev = 'tiff', dpi=1100}
+#run psa and create cost effectiveness plane
+
+ psa_output <- run_psa(psa_samp = psa_samp, 
+                      params_basecase = params_basecase,
+                      FUN = simulate_strategies,
+                      outcomes = c("Cost", "QALY",  "NMB"),
+                      strategies = c("Mean"),
+                      progress = FALSE)
+
+'costs mean'
+mean(psa_output$Cost$other_outcome$Mean)
+'qaly mean'
+mean(psa_output$QALY$other_outcome$Mean)
+'nmb mean'
+mean(psa_output$NMB$other_outcome$Mean)
+
+'percentage qaly >0'
+sum(psa_output$QALY$other_outcome$Mean >0)/length(psa_output$QALY$other_outcome$Mean) *100
+
+'percentage cost >0'
+sum(psa_output$Cost$other_outcome$Mean <0)/length(psa_output$Cost$other_outcome$Mean) *100
+
+cea_psa <- make_psa_obj(cost = psa_output$Cost$other_outcome/1000,
+                        effect = psa_output$QALY$other_outcome,
+                        parameters = psa_output$Cost$parameters,
+                        strategies = psa_output$Cost$strategies,
+                        currency = "€")
+
+
+
+plot(cea_psa, alpha =1, col = 'bw') +
+  xlim(min(cea_psa$effectiveness$Mean)-0.1, max(cea_psa$effectiveness$Mean)+0.1 )+
+  ylab('Incremental costs (per thousand euros)')+
+  xlab('Incremental QALYs')+
+  geom_hline(yintercept = 0) +
+  geom_vline(xintercept = 0) +
+  ylim(-5,15)+
+  theme_light(base_size = 12)+
+    theme(legend.title = element_blank())
+
+```
+
+
+
+```{r Fig3, message=FALSE, warning = FALSE, fig.width=unit(7,"cm"), fig.height=unit(3.5,"cm"),dev = 'tiff', dpi=1100}
+set.seed(123)
+
+#run psa and make ceac
+psa_output <- run_psa(psa_samp = psa_samp,
+                      params_basecase = params_basecase,
+                      FUN = simulate_strategies,
+                      outcomes = c("Cost", "QALY"),
+                      strategies = c("control", "treatment"),
+                      ceac = TRUE,
+                      progress = FALSE)
+
+
+cea_psa <- make_psa_obj(cost = psa_output$Cost$other_outcome,
+                        effect = psa_output$QALY$other_outcome,
+                        parameters = psa_output$Cost$parameters,
+                        strategies = psa_output$Cost$strategies,
+                        currency = "€")
+
+
+wtp <- seq(0, 1e5, by = 1e4)
+
+ceac <-ceac(wtp, cea_psa)
+
+ceac <- ceac %>% filter(Strategy == 'treatment')
+
+plot(ceac, currency='euro', frontier = FALSE, col = 'bw', points = FALSE)+
+   scale_x_continuous(expand = c(0, 0), limits = c(0, 103), breaks = c(seq(0,100, by =10)), labels = c('0', '10,000', '20,000', '30,000', '40,000', '50,000', '60,000', '70,000',  '80,000', '90,000', '100,000')) + 
+  scale_y_continuous(expand = c(0, 0), limits = c(0, 1),  breaks = c(seq(0,1, by =0.1)), labels = c('0%', '10%', '20%', '30%', '40%', '50%', '60%', '70%', '80%', '90%', '100%'))+
+  theme_light(base_size = 12)+ 
+  theme(legend.position = 'none')+
+  xlab('Willingness to pay (€/QALY)')+
+  ylab('Probability cost-effective')
+```
+
+
+
+```{r Fig4, message=FALSE, warning = FALSE, fig.width=unit(12,"cm"), fig.height=unit(6,"cm"), dpi=1100,dev = 'tiff'}
+#initialize dataframe
+df_nmb_costs_trt <- data.frame(wtp = as.numeric(),
+                               nmb = as.numeric(),
+                               ICU_occupancy = as.numeric(),
+                               cost_trt = as.numeric()
+)
+
+set.seed(123)
+#calculate nmb for different prices and icu occupancies and wtp
+for (ICU_occupancy in c(2050/(600*365),seq(0.01,1,by=0.01))){
+  for(wtp in c(30000, 50000, 80000)){
+    
+    psa_output <- run_psa(psa_samp = psa_samp,
+                          params_basecase = params_basecase,
+                          FUN = simulate_strategies,
+                          outcomes = c("Cost", "QALY",  "NMB"),
+                          strategies = c("Increment"),
+                          progress = FALSE, wtp = wtp, ICU_occupancy = ICU_occupancy, costs_trt_icu_oc = TRUE)
+    
+    cea_psa <- make_psa_obj(cost = psa_output$Cost$other_outcome,
+                            effect = psa_output$QALY$other_outcome,
+                            parameters = psa_output$Cost$parameters,
+                            strategies = psa_output$Cost$strategies,
+                            currency = "€")
+    
+    df_nmb_costs_trt <- df_nmb_costs_trt %>%
+      add_row(wtp = wtp,
+              nmb =sum(cea_psa$effectiveness * wtp - cea_psa$cost)/nrow(cea_psa$effectiveness),
+              ICU_occupancy = ICU_occupancy,
+              cost_trt = ((2050/ICU_occupancy))/365)
+  }
+}
+
+df_nmb_costs_trt %>%  write.csv('costs_trt.csv')
+
+
+plot1 <- ggplot(df_nmb_costs_trt, aes(x = cost_trt, y = nmb/1000, linetype= factor(wtp), group = factor(wtp)))+
+  geom_line() +  
+  scale_x_continuous(name = 'Costs per mechanically ventilated ICU bed day (€)',
+                     breaks = seq(0,600, by =100),expand = c(0, 1.5), limits = c(0, 601))+
+  labs(linetype = 'Willingness to pay threshold') +
+  scale_y_continuous(name = 'Incremental net monetary benefit (per € 1,000)', breaks = c(-2.5,0,2.5,5,7.5,10, 12.5), 
+                     labels =c(-2.5,0,2.5,5,7.5,10, 12.5), 
+                     #expand = c(0.1, 0.2), 
+                     limits = c(-2.5, 12.5))+ 
+  scale_linetype_discrete(name = 'Willingness to pay threshold', labels = c('€ 30,000', '€ 50,000', '€ 80,000'))+
+  ggtitle('a')+
+  theme_light(base_size = 13) +
+  theme(plot.title = element_text(hjust = 0.5))
+
+plot2 <- ggplot(df_nmb_costs_trt, aes(x = ICU_occupancy *100, y = nmb/1000, linetype= factor(wtp), group = factor(wtp)))+
+  geom_line() + 
+  scale_x_continuous(name = 'Mechanically ventilated beds occupied (%)',
+                     breaks = seq(0,100, by = 10),expand = c(0, 0.8), limits = c(0, 100))+
+  labs(linetype = 'Willingness to pay threshold')+
+   scale_y_continuous(name = '', breaks = c(-2.5,0,2.5,5,7.5,10, 12.5), 
+                     labels =c(-2.5,0,2.5,5,7.5,10, 12.5), 
+                     #expand = c(0.1, 0.2), 
+                     limits = c(-2.5, 12.5))+
+  scale_linetype_discrete(name = 'Willingness to pay threshold', labels = c('€ 30,000', '€ 50,000', '€ 80,000'))+
+  ggtitle('b')+
+  theme_light(base_size = 13) +
+  theme(plot.title = element_text(hjust = 0.5))
+
+
+ggarrange(plot1, plot2, ncol=2, common.legend = TRUE, legend = 'bottom')
+```
+
+
+
+```{r Fig5, message=FALSE, warning = FALSE, fig.width=unit(10,"cm"), fig.height=unit(5,"cm"), dpi=1100,dev = 'tiff'}
+library(scales)
+df_nmb_costs_trt <- data.frame(intervention_effect_mort = as.numeric(),
+                               intervention_effect_los = as.numeric(),
+                               wtp = as.numeric(),
+                               nmb = as.numeric(),
+                               ICU_occupancy = as.numeric(),
+                               cost_trt = as.numeric()
+)
+
+
+set.seed(123)
+
+for (intervention_effect_mort in seq(0,0.05,by=0.001)){
+  for(intervention_effect_los in seq(0,1, by = 0.03)){
+
+    psa_output <- run_psa(psa_samp = psa_samp,
+                          params_basecase = params_basecase,
+                          FUN = simulate_strategies,
+                          outcomes = c("Cost", "QALY",  "NMB"),
+                          strategies = c("Increment"),
+                          progress = FALSE, wtp = 30000,
+                          intervention_effect_los_scenario = intervention_effect_los,
+                          intervention_effect_mort_scenario = intervention_effect_mort,
+                          explore_intervention = TRUE,
+                          costs_trt_icu_oc = FALSE)
+
+    cea_psa <- make_psa_obj(cost = psa_output$Cost$other_outcome,
+                            effect = psa_output$QALY$other_outcome,
+                            parameters = psa_output$Cost$parameters,
+                            strategies = psa_output$Cost$strategies,
+                            currency = "€")
+
+    df_nmb_costs_trt <- df_nmb_costs_trt %>%
+      add_row(intervention_effect_mort = intervention_effect_mort,
+              intervention_effect_los = intervention_effect_los,
+              wtp = 30000,
+              nmb =sum(cea_psa$effectiveness * wtp - cea_psa$cost)/nrow(cea_psa$effectiveness))
+  }
+}
+
+df_nmb_costs_trt %>%  write.csv('heatmap_df.csv')
+
+
+ggplot(data = df_nmb_costs_trt, aes(x = intervention_effect_los, y = intervention_effect_mort)) +
+  geom_tile(aes(fill = nmb)) +
+  scale_fill_gradient2(name = 'Incremental net monetary benefit', low ="red", mid = "green", high = "blue", midpoint = meanian(df_nmb_costs_trt$nmb))+
+  #facet_wrap(~cost_trt) +
+  scale_x_continuous(name = 'Intervention effect on duration of mechanical ventilation (hours)', breaks = c(0, 4/24, 8/24, 0.5, 16/24, 20/24, 1), labels = c(seq(0,24, by=4)))+
+  scale_y_continuous(name = 'Intervention effect on mortality (%)', breaks = seq(0,0.05, by =0.01), labels = seq(0,5,by=1))+
+  theme_light(base_size=12)
+
+```
+
