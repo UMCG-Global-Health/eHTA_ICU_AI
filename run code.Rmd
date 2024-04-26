@@ -393,7 +393,7 @@ df_nmb_costs_trt %>%  write.csv('heatmap_df.csv')
 
 ggplot(data = df_nmb_costs_trt, aes(x = intervention_effect_los, y = intervention_effect_mort)) +
   geom_tile(aes(fill = nmb)) +
-  scale_fill_gradient2(name = 'Incremental net monetary benefit', low ="red", mid = "green", high = "blue", midpoint = meanian(df_nmb_costs_trt$nmb))+
+  scale_fill_gradient2(name = 'Incremental net monetary benefit', low ="red", mid = "green", high = "blue", midpoint = median(df_nmb_costs_trt$nmb))+
   #facet_wrap(~cost_trt) +
   scale_x_continuous(name = 'Intervention effect on duration of mechanical ventilation (hours)', breaks = c(0, 4/24, 8/24, 0.5, 16/24, 20/24, 1), labels = c(seq(0,24, by=4)))+
   scale_y_continuous(name = 'Intervention effect on mortality (%)', breaks = seq(0,0.05, by =0.01), labels = seq(0,5,by=1))+
